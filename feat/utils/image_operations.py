@@ -402,9 +402,11 @@ def align_face(img, landmarks, landmark_type=68, box_enlarge=2.5, img_size=112):
     if img.ndim == 3:
         img = img[None, :]
 
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     aligned_img = warp_affine(
-        img,
-        affine_matrix,
+        img.to(device),
+        affine_matrix.to(device),
         (img_size, img_size),
         mode="bilinear",
         padding_mode="zeros",
@@ -776,7 +778,11 @@ def mask_image(img, mask):
     #     raise ValueError(
     #         f"img must be pytorch tensor, not {type(img)} and mask must be np array not {type(mask)}"
     #     )
-    return torch.sgn(torch.tensor(mask).to(torch.float32)).unsqueeze(0).unsqueeze(0) * img
+
+
+    mask_tensor = torch.tensor(mask, dtype=torch.float32, device=img.device)  # mask を img と同じデバイスに移動
+    return torch.sgn(mask_tensor).unsqueeze(0).unsqueeze(0) * img
+    #return torch.sgn(torch.tensor(mask).to(torch.float32)).unsqueeze(0).unsqueeze(0) * img
 
 
 def convert_to_euler(rotvec, is_rotvec=True):
